@@ -1,0 +1,43 @@
+# Executables
+a.out
+*.out
+*.exe
+task_manager
+
+# Object files and static/shared libraries
+*.o
+*.a
+*.so
+*.dylib
+
+# Build directories
+build/
+dist/
+
+# Debug symbols
+*.dSYM/
+*.pdb
+
+# IDE and editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Valgrind
+vgcore.*
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile.cmake
+
+# Compilation database
+compile_commands.json
