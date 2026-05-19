@@ -1,3 +1,5 @@
+all: task_manager
+
 CC = gcc
 CFLAGS = -Wall -Wextra -Werror -g
 
@@ -5,4 +7,4 @@ CFLAGS = -Wall -Wextra -Werror -g
 	$(CC) $(CFLAGS) $< -o $@
 
 clean:
-	rm -f *.o $(shell find . -maxdepth 1 -type f -perm +111 ! -name "*.c" ! -name "*.cpp" ! -name "Makefile")
+	rm -f *.o $(shell find . -maxdepth 1 -type f -perm /111 ! -name "*.c" ! -name "*.cpp" ! -name "Makefile")
