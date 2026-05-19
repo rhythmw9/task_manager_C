@@ -45,7 +45,7 @@ void free_tasks(void);
 // initialize the array of pointers
 void init_Task_array(void){
     // init global array of pointers to hold 10 tasks to start
-    global_array = malloc(10 * sizeof(Task));
+    global_array = malloc(10 * sizeof(Task*));
     if(global_array == NULL){
         fprintf(stderr, "Error: Memory Allocation Failed!\n");
         exit(1);
@@ -86,15 +86,7 @@ void file_write_task(char* filename, char* task_name, bool is_true){
     fclose(fptr);
 }
 
-// function to add task to the global array and to the file
-void add_task(char* task_name, bool is_done, char* filename){
-    /*
-        Add task function needs to allocate memory for the struct, 
-        populate its members, add the struct (pointer) to the global array, 
-        add the data to the file.
-            -When adding the struct pointer, need to reallocate
-    */
-
+void add_task_to_array(char* task_name, bool is_done){
     // allocate memory for a task
     Task* task = malloc(sizeof(Task));
     if(task == NULL){
@@ -131,9 +123,76 @@ void add_task(char* task_name, bool is_done, char* filename){
         global_array[global_array_cap] = task;
         ++global_array_cap;
     }
+}
+
+// function to load file contents into global array to be called before main loop
+void load_file_into_global_array(char* filename, Task** global_array_ptr){
+    FILE* fptr = fopen(filename, "r");
+    if(fptr == NULL){
+        fprintf(stderr, "Error: Unable to open file...\n");
+        free(global_array);
+        exit(1);
+    }
+
+    int c = fgetc(fptr);
+
+    // check if file is empty
+    if(c == EOF){
+        puts("File is empty");
+        return; 
+    } 
+ 
+    // push consumed char back to file
+    ungetc(c, fptr);
+
+    char buffer[MAX_BUFF_SIZE];
+
+    while(fgets(buffer, MAX_BUFF_SIZE, fptr) != NULL){
+        if(strcmp(buffer, "COMPLETE\n") == 0){
+            global_array_ptr[global_array_cap - 1]->is_done = true;
+        } else if(strcmp(buffer, "INCOMPLETE\n") == 0){
+            global_array_ptr[global_array_cap - 1]->is_done = false;
+        } else if(buffer[0] == '\n'){
+            continue;
+        } else{
+            // clear the newline from the input buffer
+            buffer[strcspn(buffer, "\n")] = 0;
+            add_task_to_array(buffer, false);
+        }
+    }
+}
+
+// function to add task to the global array and to the file
+void add_task_to_array_and_file(char* task_name, bool is_done, char* filename){
+    /*
+        Add task function needs to allocate memory for the struct, 
+        populate its members, add the struct (pointer) to the global array, 
+        add the data to the file.
+            -When adding the struct pointer, need to reallocate
+    */
+
+    add_task_to_array(task_name, is_done);
 
     // save to file
     file_write_task(filename, task_name, is_done);
+}
+
+// function to list all tasks from the global array
+void list_all_tasks(Task** global_array_ptr){
+
+    if(global_array_cap == 0){
+        puts("No tasks to be listed...");
+        return;
+    }
+
+    for(int i = 0; i < global_array_cap; ++i){
+        printf("Task: %s\n", global_array_ptr[i]->task_name);
+        if(global_array_ptr[i]->is_done == 1){
+            puts("Status: COMPLETE");
+        } else {
+            puts("Status: INCOMPLETE");
+        }
+    }
 }
 
 int main(int argc, char* argv[]){
@@ -161,6 +220,9 @@ int main(int argc, char* argv[]){
 
     // inits 
     init_Task_array();
+
+    // load file into array
+    load_file_into_global_array(filename, global_array);
 
     while(running){
         printf("Enter a command: ");
@@ -194,11 +256,12 @@ int main(int argc, char* argv[]){
                     buffer[strcspn(buffer, "\n")] = 0;
                 }
                 printf("Adding task...\n");
-                add_task(buffer, false, filename);
+                add_task_to_array_and_file(buffer, false, filename);
                 printf("Task added...\n");
                 break;
             case 'l': // list all tasks
                 printf("Listing all tasks\n");
+                list_all_tasks(global_array);
                 break;
             case 'n': // list task by name
                 printf("Listing task by name\n");
@@ -214,6 +277,8 @@ int main(int argc, char* argv[]){
                 break;
             case 'q': // quit
                 printf("Quitting program...\n");
+                free_tasks();
+                free(global_array);
                 running = 0;
                 break;
             default:
