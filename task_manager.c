@@ -163,7 +163,7 @@ void load_file_into_global_array(char* filename, Task** global_array_ptr){
 }
 
 // function to add task to the global array and to the file
-void add_task_to_array_and_file(char* task_name, bool is_done, char* filename){
+int add_task_to_array_and_file(char* task_name, bool is_done, char* filename){
     /*
         Add task function needs to allocate memory for the struct, 
         populate its members, add the struct (pointer) to the global array, 
@@ -171,10 +171,20 @@ void add_task_to_array_and_file(char* task_name, bool is_done, char* filename){
             -When adding the struct pointer, need to reallocate
     */
 
+    // prevent duplicate tasks
+    for(int i = 0; i < global_array_cap; ++i){
+        if(strcmp(task_name, global_array[i]->task_name) == 0){
+            fprintf(stderr, "Error: Can't add duplicate tasks\n");
+            return -1;
+        }
+    }
+
     add_task_to_array(task_name, is_done);
 
     // save to file
     file_write_task(filename, task_name, is_done);
+
+    return 0;
 }
 
 // function to list all tasks from the global array
@@ -218,8 +228,24 @@ void list_task_by_name(Task** global_task_ptr, char* task_name){
 }
 
 // function to mark a task complete/incomplete by name
-void mark_task_by_name(){
-    
+// this function will "toggle" the completeness of a task
+void mark_task_by_name(Task** global_array_ptr, const char* task_name){
+
+    /* NEED TO WRITE A FUNCTION TO EDIT THE FILE (DELETE THE FILE THEN RE POPULATE IT FROM THE ARRAY WITH THE CHANEGS) */
+
+    for(int i = 0; i < global_array_cap; ++i){
+        if(strcmp(task_name, global_array_ptr[i]->task_name) == 0){
+            if(global_array_ptr[i]->is_done == 0){
+                global_array_ptr[i]->is_done = 1;
+                printf("%s marked as complete\n", task_name);
+            } else{
+                global_array_ptr[i]->is_done = 0;
+                printf("%s marked as incomplete\n", task_name);
+            }
+            break;
+        }
+    }
+    puts("Task not found");
 }
 
 int main(int argc, char* argv[]){
@@ -289,8 +315,10 @@ int main(int argc, char* argv[]){
                 }
 
                 printf("Adding task...\n");
-                add_task_to_array_and_file(buffer, false, filename);
-                printf("Task added...\n");
+                int status = add_task_to_array_and_file(buffer, false, filename);
+                if(status == 0){
+                    printf("Task added...\n");
+                }
                 break;
             case 'l': // list all tasks
                 printf("Listing all tasks\n");
@@ -314,8 +342,20 @@ int main(int argc, char* argv[]){
                     break;
                 }
             case 'm': // mark task as done/undone
-                printf("Marking task\n");
-                // call function here
+                printf("Enter task to mark complete/incomplete: ");
+                if(fgets(buffer, MAX_BUFF_SIZE, stdin) == NULL){
+                    fprintf(stderr, "Error: Failed to Read the Input Stream\n");
+                    free_tasks();
+                    free(global_array);
+                    exit(1);
+                } else if(buffer[0] == '\n'){
+                    fprintf(stderr, "Error: Can't edit a task with no name\n");
+                    continue;
+                } else{
+                    // clear the newline from the input buffer
+                    buffer[strcspn(buffer, "\n")] = 0;
+                }
+                mark_task_by_name(global_array, buffer);
                 break;
             case 'd': // delete task by name
                 printf("Deleting task by name\n");
