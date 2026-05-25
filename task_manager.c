@@ -138,7 +138,7 @@ void load_file_into_global_array(char* filename, Task** global_array_ptr){
 
     // check if file is empty
     if(c == EOF){
-        puts("File is empty");
+        printf("File is empty\n\n");
         return; 
     } 
  
@@ -195,6 +195,33 @@ void list_all_tasks(Task** global_array_ptr){
     }
 }
 
+// function to list a task by its name (will print out duplicate task names)
+void list_task_by_name(Task** global_task_ptr, char* task_name){
+
+    int found = 0;
+
+    for(int i = 0; i < global_array_cap; ++i){
+        if(strcmp(global_task_ptr[i]->task_name, task_name) == 0){
+            found = 1;
+            printf("Task: %s\n", global_task_ptr[i]->task_name);
+            if(global_task_ptr[i]->is_done == 1){
+                puts("Status: COMPLETE");
+            } else {
+                puts("Status: INCOMPLETE");
+            }
+        }
+    }
+
+    if(!found){
+        puts("No task found...");
+    }
+}
+
+// function to mark a task complete/incomplete by name
+void mark_task_by_name(){
+    
+}
+
 int main(int argc, char* argv[]){
     
     // cmd line args check
@@ -241,8 +268,10 @@ int main(int argc, char* argv[]){
             // no exit here, re run loop
         }
 
-        while(getchar() != '\n'); // clear the input buffer
-
+        if(!(c == '\n')){
+            while(getchar() != '\n'); // clear the input buffer
+        }
+        
         switch(c){
             case 'a': // add task
                 printf("Enter task name: ");
@@ -251,10 +280,14 @@ int main(int argc, char* argv[]){
                     free_tasks();
                     free(global_array);
                     exit(1);
-                } else {
+                } else if(buffer[0] == '\n'){
+                    fprintf(stderr, "Error: Can't add a task with no name\n");
+                    continue;
+                } else{
                     // clear the newline from the input buffer
                     buffer[strcspn(buffer, "\n")] = 0;
                 }
+
                 printf("Adding task...\n");
                 add_task_to_array_and_file(buffer, false, filename);
                 printf("Task added...\n");
@@ -264,10 +297,25 @@ int main(int argc, char* argv[]){
                 list_all_tasks(global_array);
                 break;
             case 'n': // list task by name
-                printf("Listing task by name\n");
-                break;
+                {
+                    puts("Enter a task name to search for: ");
+                    char task_name_buffer[MAX_BUFF_SIZE];
+                    if(fgets(task_name_buffer, MAX_BUFF_SIZE, stdin) == NULL){
+                        fprintf(stderr, "Error: Failed to Read the Input Stream\n");
+                        free_tasks();
+                        free(global_array);
+                        exit(1);
+                    } else{
+                        // clear the newline from the input buffer
+                        task_name_buffer[strcspn(task_name_buffer, "\n")] = 0;
+                    }
+                    printf("Listing task by name\n");
+                    list_task_by_name(global_array, task_name_buffer);
+                    break;
+                }
             case 'm': // mark task as done/undone
                 printf("Marking task\n");
+                // call function here
                 break;
             case 'd': // delete task by name
                 printf("Deleting task by name\n");
